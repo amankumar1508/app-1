@@ -51,3 +51,51 @@ exports.getNoteById = async (req, res) => {
         res.status(500).json({ success: false, message: error.message, data: null });
     }
 };
+
+exports.updateNote = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) return res.status(400).json({ success: false, message: "Invalid note ID format", data: null });
+        const note = await Note.findByIdAndUpdate(id, req.body, { new: true, overwrite: true, runValidators: true });
+        if (!note) return res.status(404).json({ success: false, message: "Note not found", data: null });
+        res.status(200).json({ success: true, message: "Note replaced successfully", data: note });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+};
+
+exports.patchNote = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) return res.status(400).json({ success: false, message: "Invalid note ID format", data: null });
+        if (!req.body || Object.keys(req.body).length === 0) return res.status(400).json({ success: false, message: "No fields provided to update", data: null });
+        const note = await Note.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+        if (!note) return res.status(404).json({ success: false, message: "Note not found", data: null });
+        res.status(200).json({ success: true, message: "Note updated successfully", data: note });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+};
+
+exports.deleteNote = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) return res.status(400).json({ success: false, message: "Invalid note ID format", data: null });
+        const note = await Note.findByIdAndDelete(id);
+        if (!note) return res.status(404).json({ success: false, message: "Note not found", data: null });
+        res.status(200).json({ success: true, message: "Note deleted successfully", data: null });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+};
+
+exports.bulkDeleteNotes = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!ids || !Array.isArray(ids) || ids.length === 0) return res.status(400).json({ success: false, message: "IDs array is required", data: null });
+        const result = await Note.deleteMany({ _id: { $in: ids } });
+        res.status(200).json({ success: true, message: `${result.deletedCount} notes deleted successfully`, data: null });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+};
